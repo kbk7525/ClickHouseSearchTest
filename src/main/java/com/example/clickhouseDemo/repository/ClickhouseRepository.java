@@ -6,6 +6,8 @@ import com.example.clickhouseDemo.entity.Weblog;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 
 @Repository
@@ -28,24 +30,11 @@ public class ClickhouseRepository {
         int offset = searchDto.getPage() * searchDto.getDataCnt();
         String sql = """
                        select * from weblog
-                       order by timestamp
+                       order by timestamp DESC
                        limit ? offset ?
                        """;
         return jdbcTemplate.query(sql,
-                new Object[]{searchDto.getDataCnt(), offset},
-                (rs, rowNum) -> {
-                    WeblogResponseDto dto = new WeblogResponseDto();
-                    dto.setIp(rs.getString("ip"));
-                    dto.setTimestamp(rs.getString("timestamp"));
-                    dto.setMethod(rs.getString("method"));
-                    dto.setUrl(rs.getString("url"));
-                    dto.setProtocol(rs.getString("protocol"));
-                    dto.setStatus(rs.getString("status"));
-                    dto.setSize(rs.getString("size"));
-                    dto.setRef(rs.getString("ref"));
-                    dto.setAgent(rs.getString("agent"));
-                    return dto;
-                });
+                new Object[]{searchDto.getDataCnt(), offset}, this::mapperWeblogResponseDto);
     }
 
     public List<WeblogResponseDto> findByStatus(SearchDto searchDto) {
@@ -53,23 +42,24 @@ public class ClickhouseRepository {
         String sql = """
                        select * from weblog
                        where status = ?
-                       order by timestamp
+                       order by timestamp DESC
                        limit ? offset ?
                        """;
         return jdbcTemplate.query(sql,
-                new Object[]{searchDto.getKeyword(), searchDto.getDataCnt(), offset},
-                (rs, rowNum) -> {
-                    WeblogResponseDto dto = new WeblogResponseDto();
-                    dto.setIp(rs.getString("ip"));
-                    dto.setTimestamp(rs.getString("timestamp"));
-                    dto.setMethod(rs.getString("method"));
-                    dto.setUrl(rs.getString("url"));
-                    dto.setProtocol(rs.getString("protocol"));
-                    dto.setStatus(rs.getString("status"));
-                    dto.setSize(rs.getString("size"));
-                    dto.setRef(rs.getString("ref"));
-                    dto.setAgent(rs.getString("agent"));
-                    return dto;
-                });
+                new Object[]{searchDto.getKeyword(), searchDto.getDataCnt(), offset}, this::mapperWeblogResponseDto);
+    }
+
+    private WeblogResponseDto mapperWeblogResponseDto(ResultSet rs, int rowNum) throws SQLException {
+        WeblogResponseDto dto = new WeblogResponseDto();
+        dto.setIp(rs.getString("ip"));
+        dto.setTimestamp(rs.getString("timestamp"));
+        dto.setMethod(rs.getString("method"));
+        dto.setUrl(rs.getString("url"));
+        dto.setProtocol(rs.getString("protocol"));
+        dto.setStatus(rs.getString("status"));
+        dto.setSize(rs.getString("size"));
+        dto.setRef(rs.getString("ref"));
+        dto.setAgent(rs.getString("agent"));
+        return dto;
     }
 }
